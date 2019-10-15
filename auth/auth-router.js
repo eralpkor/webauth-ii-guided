@@ -6,7 +6,7 @@ const Users = require('../users/users-model.js');
 // for endpoints beginning with /api/auth
 router.post('/register', (req, res) => {
   let user = req.body;
-  const hash = bcrypt.hashSync(user.password, 10); // 2 ^ n
+  const hash = bcrypt.hashSync(user.password, 8); // 2 ^ n
   user.password = hash;
 
   Users.add(user)
@@ -21,10 +21,15 @@ router.post('/register', (req, res) => {
 router.post('/login', (req, res) => {
   let { username, password } = req.body;
 
+  console.log('session', req.session)
+
   Users.findBy({ username })
     .first()
     .then(user => {
       if (user && bcrypt.compareSync(password, user.password)) {
+
+        req.session.username = user.username; // add this to check
+
         res.status(200).json({
           message: `Welcome ${user.username}!`,
         });
@@ -36,5 +41,16 @@ router.post('/login', (req, res) => {
       res.status(500).json(error);
     });
 });
+
+router.get('/logout', (req, res) => {
+  if (req.session) {
+    req.session.destroy(err => {
+      res.status(200).json({ message: 'check out anytime'})
+    }); // clears everything
+  } else {
+    res.status(200).json({message: 'already logged out!'})
+  }
+  
+})
 
 module.exports = router;
